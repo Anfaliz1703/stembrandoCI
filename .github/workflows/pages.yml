@@ -18,17 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Prepare STEMbrando Live
-        env:
-          SB_URL: ${{ vars.SUPABASE_URL }}
-          SB_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           mkdir site
-          curl -fsSL -H "Accept: application/vnd.github.raw+json" "https://api.github.com/repos/Anfaliz1703/stembrandoCI/git/blobs/b8c0209063f266ec8c45f62e3042838353c3685d" -o site/index.html
-          printf "window.STEM_CONFIG={room:'STEM26',supabaseUrl:'%s',supabasePublishableKey:'%s'};\n" "$SB_URL" "$SB_KEY" > site/config.js
+          curl -fsSL -H "Accept: application/vnd.github.raw+json" "https://api.github.com/repos/Anfaliz1703/stembrandoCI/git/blobs/902374fa4f4cf2c336bf7ae61d779e6528f5cc3b" -o site/index.html
           touch site/.nojekyll
 
       - uses: actions/upload-pages-artifact@v3
