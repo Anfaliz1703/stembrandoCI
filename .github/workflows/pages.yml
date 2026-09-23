@@ -17,12 +17,14 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/configure-pages@v5
 
       - name: Prepare STEMbrando Live
         run: |
           mkdir site
-          curl -fsSL -H "Accept: application/vnd.github.raw+json" "https://api.github.com/repos/Anfaliz1703/stembrandoCI/git/blobs/902374fa4f4cf2c336bf7ae61d779e6528f5cc3b" -o site/index.html
+          cp index.html site/index.html
           touch site/.nojekyll
 
       - uses: actions/upload-pages-artifact@v3
