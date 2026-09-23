@@ -17,22 +17,21 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - name: Prepare site
+
+      - name: Prepare STEMbrando Live
         env:
           SB_URL: ${{ vars.SUPABASE_URL }}
           SB_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
         run: |
           mkdir site
-          cp index.html *.css *.js site/
-          rm -f site/config.example.js
-          cat > site/config.js <<CONFIG
-          window.STEM_CONFIG={room:'STEM26',supabaseUrl:'${SB_URL}',supabasePublishableKey:'${SB_KEY}'};
-          CONFIG
+          curl -fsSL -H "Accept: application/vnd.github.raw+json" "https://api.github.com/repos/Anfaliz1703/stembrandoCI/git/blobs/b8c0209063f266ec8c45f62e3042838353c3685d" -o site/index.html
+          printf "window.STEM_CONFIG={room:'STEM26',supabaseUrl:'%s',supabasePublishableKey:'%s'};\n" "$SB_URL" "$SB_KEY" > site/config.js
           touch site/.nojekyll
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
+
       - id: deployment
         uses: actions/deploy-pages@v4
