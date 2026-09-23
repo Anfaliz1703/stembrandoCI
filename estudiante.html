@@ -232,7 +232,66 @@ async function refreshAudience(){
   renderAttentionCheck(idx);
   renderInteraction(inter);
 }
-function renderInteraction(inter){const box=$('#interaction');if(!box)return;if(!inter){box.innerHTML='<h2>Esperando dinámica…</h2><p class="muted">Observa la presentación. Cuando el expositor active una pregunta, aparecerá aquí.</p>';return}if(submitted.has(inter.id)){box.innerHTML='<h2>Respuesta recibida</h2><div class="notice">Tu participación ya fue registrada para esta dinámica.</div>';return}if(inter.type==='word'){box.innerHTML=`<h3>${esc(inter.prompt)}</h3><div class="text-answer"><input id="word" maxlength="54" placeholder="Una palabra o frase corta"><button class="btn btn-blue" id="sendWord">Enviar</button></div>`;$('#sendWord').onclick=async()=>{const v=$('#word').value.trim();if(!v)return;await submitResponse(inter,v);renderInteraction(inter)}}if(inter.type==='approval'){box.innerHTML=`<h3>${esc(inter.prompt)}</h3><button class="btn btn-green w100" id="yes">Sí, avancemos</button>`;$('#yes').onclick=async()=>{await submitApproval(inter);renderInteraction(inter)}}if(inter.type==='quiz'){box.innerHTML=`<h3>${esc(inter.prompt)}</h3><div class="answers">${inter.options.map((o,i)=>`<button data-v="${i}"><b>${String.fromCharCode(65+i)}.</b> ${esc(o)}</button>`).join('')}</div><div class="notice">También cuenta la velocidad.</div>`;$$('.answers button',box).forEach(b=>b.onclick=async()=>{$$('.answers button',box).forEach(x=>x.disabled=true);b.classList.add('sel');const r=await submitResponse(inter,b.dataset.v);box.insertAdjacentHTML('beforeend',`<div class="notice ${r.correct?'':'warn'}">${r.correct?'Correcto. Puntaje registrado.':'Respuesta registrada.'}</div>`);setTimeout(()=>renderInteraction(inter),800)})}}
+function renderInteraction(inter){
+  const box=$('#interaction');
+  if(!box)return;
+
+  const interactionKey=inter?.id||'none';
+
+  // Evita reconstruir la misma dinámica en cada sincronización.
+  // En móviles, recrear el <input> hace perder el foco y cierra el teclado.
+  if(box.dataset.interactionKey===interactionKey && inter && !submitted.has(inter.id)) return;
+
+  box.dataset.interactionKey=interactionKey;
+
+  if(!inter){
+    box.innerHTML='<h2>Esperando dinámica…</h2><p class="muted">Observa la presentación. Cuando corresponda una actividad, aparecerá aquí automáticamente.</p>';
+    return;
+  }
+
+  if(submitted.has(inter.id)){
+    box.innerHTML='<h2>Respuesta recibida</h2><div class="notice">Tu participación ya fue registrada para esta dinámica.</div>';
+    return;
+  }
+
+  if(inter.type==='word'){
+    box.innerHTML=`<h3>${esc(inter.prompt)}</h3><div class="text-answer"><input id="word" maxlength="54" autocomplete="off" enterkeyhint="send" placeholder="Una palabra o frase corta"><button class="btn btn-blue" id="sendWord">Enviar</button></div>`;
+    const input=$('#word');
+    $('#sendWord').onclick=async()=>{
+      const v=input.value.trim();
+      if(!v)return;
+      await submitResponse(inter,v);
+      renderInteraction(inter);
+    };
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        $('#sendWord').click();
+      }
+    });
+    return;
+  }
+
+  if(inter.type==='approval'){
+    box.innerHTML=`<h3>${esc(inter.prompt)}</h3><button class="btn btn-green w100" id="yes">Sí, avancemos</button>`;
+    $('#yes').onclick=async()=>{
+      await submitApproval(inter);
+      renderInteraction(inter);
+    };
+    return;
+  }
+
+  if(inter.type==='quiz'){
+    box.innerHTML=`<h3>${esc(inter.prompt)}</h3><div class="answers">${inter.options.map((o,i)=>`<button data-v="${i}"><b>${String.fromCharCode(65+i)}.</b> ${esc(o)}</button>`).join('')}</div><div class="notice">También cuenta la velocidad.</div>`;
+    $$('.answers button',box).forEach(b=>b.onclick=async()=>{
+      $$('.answers button',box).forEach(x=>x.disabled=true);
+      b.classList.add('sel');
+      const r=await submitResponse(inter,b.dataset.v);
+      box.insertAdjacentHTML('beforeend',`<div class="notice ${r.correct?'':'warn'}">${r.correct?'Correcto. Puntaje registrado.':'Respuesta registrada.'}</div>`);
+      setTimeout(()=>renderInteraction(inter),800);
+    });
+  }
+}
 function renderSetup(){
 app.innerHTML=`<main class="audience"><section class="aud-card"><div class="eyebrow">Configuración del presentador</div><h2>Conectar STEMbrando Live con Supabase</h2><p class="muted">Esta configuración se guarda solamente en este navegador. La URL y la Publishable key son datos públicos del cliente; nunca uses una Secret key.</p><form id="setupForm" class="form"><div class="field"><label>Project URL</label><input name="url" required placeholder="https://xxxx.supabase.co" value="${esc(CFG.supabaseUrl)}"></div><div class="field"><label>Publishable key</label><input name="key" required placeholder="sb_publishable_..." value="${esc(CFG.supabasePublishableKey)}"></div><button class="btn btn-blue w100">Guardar y abrir presentador</button></form><div class="notice">Después, el QR incluirá automáticamente esta configuración para que los celulares entren sin configurar nada.</div></section></main>`;
 $('#setupForm').onsubmit=e=>{e.preventDefault();const f=new FormData(e.currentTarget);const cfg={supabaseUrl:String(f.get('url')).trim(),supabasePublishableKey:String(f.get('key')).trim()};localStorage.setItem('stembrando-supabase',JSON.stringify(cfg));const u=new URL(location.href);u.search='';u.searchParams.set('view','presenter');location.href=u.href};
