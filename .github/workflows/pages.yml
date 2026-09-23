@@ -19,15 +19,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+
       - name: Prepare site
         run: |
           mkdir site
           cp index.html site/index.html
           cp live.html site/live.html
           cp stable.html site/stable.html
+          cp presentador.html site/presentador.html
+          cp estudiante.html site/estudiante.html
           touch site/.nojekyll
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
+
       - id: deployment
         uses: actions/deploy-pages@v4
